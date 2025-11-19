@@ -6,8 +6,8 @@ import io
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="Simulateur Entrepôt Pro", layout="wide")
 
-st.title("🏭 Plan de Masse Opérationnel")
-st.markdown("Outil de dimensionnement dynamique pour le séchage rotatif (3 jours) et le stockage.")
+st.title("Simulateur d'Implantation")
+st.markdown("**Plan de Masse Opérationnel :** Séchage & Stockage de Matières Premières")
 
 # ==========================================
 # 1. BARRE LATÉRALE (CONTRÔLES)
@@ -17,16 +17,23 @@ with st.sidebar:
     st.header("1. Dimensions & Agencement")
     bat_longueur = st.slider("Longueur Bâtiment (m)", 40, 150, 60, step=1)
     bat_largeur = st.slider("Largeur Bâtiment (m)", 30, 100, 50, step=1)
-    largeur_allee = st.slider("Largeur Allée (m)", 4.0, 12.0, 8.0, step=0.5)
+    
+    st.markdown("### 🛣️ Espacements & Séparations")
+    largeur_allee = st.slider("Largeur Allée Centrale (m)", 4.0, 12.0, 8.0, step=0.5)
+    marge_securite = st.slider("Marge / Buffer (m)", 0.0, 5.0, 0.0, step=0.5, help="Espace vide entre l'allée et le stockage")
+    
+    st.markdown("**Séparations internes :**")
+    espace_inter_matiere = st.slider("Espace entre Matières (m)", 0.0, 5.0, 1.0, step=0.1, help="Espace ou Mur entre deux types de produits différents")
+    espace_inter_lot = st.slider("Espace entre Lots J1/J2/J3 (m)", 0.0, 2.0, 0.5, step=0.1, help="Espace entre les tas d'un même produit")
     
     st.markdown("---")
     st.subheader("📐 Géométrie des Zones")
-    largeur_dispo = bat_largeur - largeur_allee
+    largeur_dispo = bat_largeur - largeur_allee - marge_securite
     
     largeur_stock_droite = st.slider(
         "Largeur allouée au Stockage (Droite)", 
         min_value=2.0, 
-        max_value=float(largeur_dispo - 5), 
+        max_value=float(largeur_dispo - 5) if largeur_dispo > 7 else 2.0, 
         value=float(10.0), 
         step=0.5
     )
@@ -48,13 +55,13 @@ with st.sidebar:
     # --- RECETTE ---
     st.header("4. Recette & Densités")
     
-    st.subheader("🟢 Rebut Pam")
-    pct_rebut_pam = st.slider("% Rebut Pam", 0, 100, 18, key="pct_rebut_pam")
-    den_rebut_pam = st.number_input("Densité Rebut Pam", 0.1, 5.0, 1.5, step=0.1, key="den_rebut_pam")
+    st.subheader("🟢 Rebuts PAM")
+    pct_Rebuts_PAM = st.slider("% Rebuts PAM", 0, 100, 18, key="pct_Rebuts_PAM")
+    den_Rebuts_PAM = st.number_input("Densité Rebuts PAM", 0.1, 5.0, 1.5, step=0.1, key="den_Rebuts_PAM")
 
-    st.subheader("🔵 Jet et coulée Blénod")
-    pct_jet_blenod = st.slider("% Jet et coulée Blénod", 0, 100, 37, key="pct_jet_blenod")
-    den_jet_blenod = st.number_input("Densité Jet et coulée Blénod", 0.1, 5.0, 1.0, step=0.1, key="den_jet_blenod")
+    st.subheader("🔵 Jets et coulées Blénod")
+    pct_jet_blenod = st.slider("% Jets et coulées Blénod", 0, 100, 37, key="pct_jet_blenod")
+    den_jet_blenod = st.number_input("Densité Jets et coulées Blénod", 0.1, 5.0, 1.0, step=0.1, key="den_jet_blenod")
 
     st.subheader("⚪️ Gueuset")
     pct_gueuset = st.slider("% Gueuset", 0, 100, 0, key="pct_gueuset")
@@ -68,7 +75,7 @@ with st.sidebar:
     pct_ferraille = st.slider("% Ferraille", 0, 100, 30, key="pct_ferraille")
     den_ferraille = st.number_input("Densité Ferraille", 0.1, 5.0, 1.25, step=0.1, key="den_ferraille")
 
-    total_pct = pct_rebut_pam + pct_jet_blenod + pct_gueuset + pct_fontes_foug + pct_ferraille
+    total_pct = pct_Rebuts_PAM + pct_jet_blenod + pct_gueuset + pct_fontes_foug + pct_ferraille
     if total_pct != 100:
         st.error(f"⚠️ Total Recette = {total_pct}%")
 
@@ -77,8 +84,8 @@ with st.sidebar:
 # ==========================================
 
 MATIERES = {
-    "Rebut Pam": {"ratio": pct_rebut_pam/100, "densite": den_rebut_pam, "couleur": "#ff9933"},
-    "Jet Blénod": {"ratio": pct_jet_blenod/100, "densite": den_jet_blenod, "couleur": "#33ccff"},
+    "Rebuts PAM": {"ratio": pct_Rebuts_PAM/100, "densite": den_Rebuts_PAM, "couleur": "#ff9933"},
+    "Jets Blénod": {"ratio": pct_jet_blenod/100, "densite": den_jet_blenod, "couleur": "#0a82d3"},
     "Gueuset": {"ratio": pct_gueuset/100, "densite": den_gueuset, "couleur": "#aaaaaa"},
     "Fontes Foug": {"ratio": pct_fontes_foug/100, "densite": den_fontes_foug, "couleur": "#ffcc66"},
     "Ferraille": {"ratio": pct_ferraille/100, "densite": den_ferraille, "couleur": "#da1884"},
@@ -86,6 +93,7 @@ MATIERES = {
 
 surface_totale = bat_longueur * bat_largeur
 surface_allee = bat_longueur * largeur_allee
+surface_marge = bat_longueur * marge_securite
 
 resultats = {}
 surface_sechage_totale = 0
@@ -125,8 +133,15 @@ ax.add_patch(patches.Rectangle((0, 0), bat_largeur, bat_longueur, edgecolor='bla
 # Allée Centrale
 x_allee = largeur_sechage_gauche
 ax.add_patch(patches.Rectangle((x_allee, 0), largeur_allee, bat_longueur, color='#e0e0e0', alpha=0.5, hatch='//'))
-ax.text(x_allee + largeur_allee/2, bat_longueur/2, f"ALLÉE DE CIRCULATION\n{largeur_allee}m", 
+ax.text(x_allee + largeur_allee/2, bat_longueur/2, f"ALLÉE\n{largeur_allee}m", 
         ha='center', va='center', color='#666', rotation=90, fontweight='bold', fontsize=10)
+
+# Marge de Sécurité
+if marge_securite > 0:
+    x_marge = x_allee + largeur_allee
+    ax.add_patch(patches.Rectangle((x_marge, 0), marge_securite, bat_longueur, color='white', alpha=1.0, hatch='..'))
+    ax.text(x_marge + marge_securite/2, bat_longueur/3, f"BUFFER\n{marge_securite}m", 
+            ha='center', va='center', color='#999', rotation=90, fontsize=8)
 
 # --- CÔTÉ GAUCHE : SÉCHAGE ---
 curseur_y = 0
@@ -139,21 +154,26 @@ for nom, res in resultats.items():
     l_jour = l_totale / 3
     coul = res["props"]["couleur"]
     
-    # Centre du bloc matière
-    y_center_block = curseur_y + l_totale / 2
+    # Calcul de la hauteur totale du bloc MATIÈRE (incluant les espaces inter-lots)
+    # Hauteur bloc = 3 * l_jour + 2 * espace_inter_lot
+    hauteur_bloc_visuel = (3 * l_jour) + (2 * espace_inter_lot)
     
-    # Flèche de rotation (Décalée pour ne pas gêner)
-    if l_totale > 2:
+    y_center_block = curseur_y + hauteur_bloc_visuel / 2
+    
+    # Flèche de rotation
+    if hauteur_bloc_visuel > 2:
         ax.annotate(
             'Rotation 3j', 
-            xy=(0, curseur_y + l_totale), 
-            xytext=(-1.5, curseur_y), # Légèrement décalé
+            xy=(0, curseur_y + hauteur_bloc_visuel), 
+            xytext=(-1.5, curseur_y),
             arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=-0.1", color='#444', lw=1.5),
             fontsize=8, ha='center', va='center', rotation=90, color='#444'
         )
 
-    for i in range(3): # 0=Lot 1, 1=Lot 2, 2=Lot 3
-        y_pos = curseur_y + (i * l_jour)
+    # Dessin des 3 lots
+    for i in range(3): 
+        # Position Y tenant compte des espaces
+        y_pos = curseur_y + (i * l_jour) + (i * espace_inter_lot)
         
         if y_pos + l_jour > bat_longueur:
             fill_col = '#ffcccc'
@@ -166,27 +186,32 @@ for nom, res in resultats.items():
         ax.add_patch(patches.Rectangle((0, y_pos), largeur_sechage_gauche, l_jour, 
                                        facecolor=fill_col, edgecolor=edge_col, alpha=0.5, linewidth=1))
         
-        # Etiquetage Lot (Discret)
         label_lot = f"Lot {i+1}"
         if l_jour > 0.5:
              ax.text(0.5, y_pos + l_jour/2, label_lot, 
                         ha='left', va='center', fontsize=7, color='#333', fontweight='normal')
 
-    # ETIQUETTE PRINCIPALE SÉCHAGE (Sur fond blanc pour lisibilité)
-    if l_totale > 1:
-        label_text = f"{nom}\nSurface: {int(res['sechage'])} m²\n(H={h_sechage}m)"
+    # Etiquette Centrale
+    if hauteur_bloc_visuel > 1:
+        label_text = f"{nom}\n{int(res['sechage'])} m²\n(H={h_sechage}m)"
         ax.text(largeur_sechage_gauche/2, y_center_block, label_text, 
                 ha='center', va='center', fontsize=9, fontweight='bold', color='black',
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
 
-    curseur_y += l_totale
+    # Mise à jour du curseur pour la prochaine matière
+    # On ajoute la hauteur du bloc + l'espace inter-matière
+    curseur_y += hauteur_bloc_visuel + espace_inter_matiere
 
 # Limite Batiment
 ax.axhline(y=bat_longueur, color='red', linestyle='--', linewidth=1.5)
 if depassement:
-    ax.text(largeur_sechage_gauche/2, bat_longueur + 2, "⚠️ DÉPASSEMENT LIMITES", ha='center', color='red', fontweight='bold')
+    ax.text(largeur_sechage_gauche/2, bat_longueur + 2, "⚠️ DÉPASSEMENT", ha='center', color='red', fontweight='bold')
 
 # --- CÔTÉ DROIT : STOCK SEC ---
+# On essaie d'aligner visuellement le début de chaque stock avec le début de sa zone de séchage
+# Mais comme les échelles de longueur sont différentes (stock plus court), on les empile simplement
+# en respectant l'espace inter-matière pour garder une logique visuelle aérée.
+
 curseur_y_droit = 0
 
 for nom, res in resultats.items():
@@ -196,33 +221,32 @@ for nom, res in resultats.items():
     y_pos = curseur_y_droit
     coul = res["props"]["couleur"]
     
-    x_stock = x_allee + largeur_allee
+    x_stock = x_allee + largeur_allee + marge_securite
+    
     ax.add_patch(patches.Rectangle((x_stock, y_pos), largeur_stock_droite, l_stock,
                                    facecolor=coul, edgecolor='black', alpha=0.3, hatch='..', linewidth=1))
     
-    # ETIQUETTE PRINCIPALE STOCKAGE (AMÉLIORÉE avec fond blanc)
     if l_stock > 1:
         label_text = f"STOCK {nom}\n{int(res['stock'])} m²\n(H={h_stock_sec}m)"
         ax.text(x_stock + largeur_stock_droite/2, y_pos + l_stock/2, label_text, 
                 ha='center', va='center', fontsize=9, color='black', fontweight='bold',
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
     
-    curseur_y_droit += l_stock
+    # On ajoute l'espace inter-matière aussi à droite pour être cohérent
+    curseur_y_droit += l_stock + espace_inter_matiere
 
-# Cotes globales (Décalées pour éviter chevauchement)
+# Cotes globales
 ax.text(bat_largeur / 2, -3, f"LARGEUR TOTALE : {bat_largeur} m", ha='center', fontweight='bold')
-# Déplacement de la cote Longueur à gauche (-5 au lieu de -3)
 ax.text(-5, bat_longueur / 2, f"LONGUEUR TOTALE : {bat_longueur} m", va='center', rotation=90, fontweight='bold')
 
-# Configuration Axes
-ax.set_xlim(-6, bat_largeur + 5) # Augmenté pour voir la cote à gauche
+ax.set_xlim(-6, bat_largeur + 5)
 ax.set_ylim(-5, bat_longueur + 5)
 ax.set_aspect('equal')
 ax.axis('off')
 ax.set_title(f"PLAN D'IMPLANTATION - {scenario} T/MOIS", fontsize=16, fontweight='bold', pad=20)
 
 # ==========================================
-# 4. TABLEAU DE BORD & EXPORT
+# 4. EXPORT
 # ==========================================
 
 col_graph, col_stats = st.columns([2, 1])
@@ -246,26 +270,30 @@ with col_stats:
     col_dl[1].download_button("🖼️ Plan PNG", png_buffer, f"plan_{scenario}.png", "image/png")
 
     st.markdown("---")
-    st.subheader("📊 Surfaces & Occupation")
+    st.subheader("📊 Bilan avec Espacements")
     
-    # Métriques Principales
-    m1, m2 = st.columns(2)
-    m1.metric("Bâtiment", f"{int(surface_totale)} m²")
-    m2.metric("Allée", f"{int(surface_allee)} m²")
+    col_kpi = st.columns(2)
+    col_kpi[0].metric("Séchage", f"{int(surface_sechage_totale)} m²")
+    col_kpi[1].metric("Stockage", f"{int(surface_stock_totale)} m²")
     
-    m3, m4 = st.columns(2)
-    m3.metric("Séchage Total", f"{int(surface_sechage_totale)} m²")
-    m4.metric("Stockage Total", f"{int(surface_stock_totale)} m²")
+    col_kpi2 = st.columns(2)
+    col_kpi2[0].metric("Allée", f"{int(surface_allee)} m²")
+    col_kpi2[1].metric("Surface totale", f"{int(surface_totale)} m²")
 
     st.markdown("---")
     
-    # Indicateurs de Longueur
     longueur_gauche = curseur_y
     if depassement:
         st.error(f"❌ **DÉPASSEMENT** : +{longueur_gauche - bat_longueur:.1f}m")
     else:
-        st.success(f"✅ **LONGUEUR OK** : {longueur_gauche:.1f}m / {bat_longueur}m")
+        st.success(f"✅ **LONGUEUR OK** : {longueur_gauche:.1f}m")
 
-    # Espace Libre
-    reste = surface_totale - surface_allee - surface_sechage_totale - surface_stock_totale
-    st.metric("Espace Libre (Non alloué)", f"{int(reste)} m²")
+    # Calcul de l'espace perdu par les séparations
+    # C'est une info intéressante pour l'utilisateur
+    longueur_totale_espaces = curseur_y - (sum([r['longueur_sechage'] for r in resultats.values() if r['props']['ratio']>0]))
+    surface_perdue_separations = longueur_totale_espaces * largeur_sechage_gauche
+    
+    st.info(f"Surface utilisée par les séparations (G) : ~{int(surface_perdue_separations)} m²")
+
+    reste = surface_totale - surface_allee - surface_sechage_totale - surface_stock_totale - surface_marge - surface_perdue_separations
+    st.metric("Espace Libre Réel", f"{int(reste)} m²")
