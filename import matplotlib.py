@@ -23,8 +23,8 @@ with st.sidebar:
     marge_securite = st.slider("Marge / Buffer (m)", 0.0, 5.0, 0.0, step=0.5, help="Espace vide entre l'allée et le stockage")
     
     st.markdown("**Séparations internes :**")
-    espace_inter_matiere = st.slider("Espace entre Matières (m)", 0.0, 5.0, 1.0, step=0.1, help="Espace ou Mur entre deux types de produits différents")
-    espace_inter_lot = st.slider("Espace entre Lots J1/J2/J3 (m)", 0.0, 2.0, 0.5, step=0.1, help="Espace entre les tas d'un même produit")
+    espace_inter_matiere = st.slider("Espace entre Matières (m)", 0.0, 5.0, 0.3, step=0.1, help="Espace ou Mur entre deux types de produits différents")
+    espace_inter_lot = st.slider("Espace entre Lots J1/J2/J3 (m)", 0.0, 2.0, 0.3, step=0.1, help="Espace entre les tas d'un même produit")
     
     st.markdown("---")
     st.subheader("📐 Géométrie des Zones")
@@ -34,7 +34,7 @@ with st.sidebar:
         "Largeur allouée au Stockage (Droite)", 
         min_value=2.0, 
         max_value=float(largeur_dispo - 5) if largeur_dispo > 7 else 2.0, 
-        value=float(10.0), 
+        value=float(6.5), 
         step=0.5
     )
     largeur_sechage_gauche = largeur_dispo - largeur_stock_droite
