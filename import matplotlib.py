@@ -72,7 +72,7 @@ with st.sidebar:
     st.metric("Flux Journalier", f"{tonnage_jour:.0f} t/jour", delta="Base de calcul")
     
     h_sechage = st.number_input("Hauteur Séchage (m)", 0.1, 2.0, 0.4)
-    h_stock = st.number_input("Hauteur Stockage (pic) (m)", 0.1, 15.0, 3.5)
+    h_stock = st.number_input("Hauteur Stockage (pic) (m)", 0.1, 15.0, 7.0)
     duree_sechage = 3
 
     # --- RECETTE (INTERFACE COLONNES) ---
